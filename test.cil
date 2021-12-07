@@ -1,51 +1,47 @@
+.assembly euler {}
 .assembly extern mscorlib {}
-.assembly foo {}
 
-.method static public void Main() cil managed
+.method public static void Main()
 {
     .entrypoint
-    .maxstack 5
-    .locals (int32, int32)
-    ldc.i4.0
-    stloc.0 // i
-    ldc.i4.0
-    stloc.1 // acc
+    .maxstack 4
+    .locals init (int32, int32, int32) // acc, fib_{n}, fib_{n-1}
+    ldc.i4.1
+    stloc.1
 
-    BEGIN_LOOP:
-    // mod 3
-    ldloc.0
-    ldc.i4.3
+    LOOP_BEGIN:
+    // if fib_{n} is even, add to acc
+    ldloc.1
+    ldc.i4.2
     rem
-    ldc.i4.0
-    beq.s ACC
-
-    // mod 5
-    ldloc.0
-    ldc.i4.5
-    rem
-    ldc.i4.0
-    beq.s ACC
-
-    br.s LOOP_CONDITION
+    ldc.i4.1
+    beq FIB_INC
 
     ACC:
     ldloc.0
     ldloc.1
     add
-    stloc.1
-
-    LOOP_CONDITION:
-    ldloc.0
-    ldc.i4.1
-    add
-    dup
     stloc.0
-    ldc.i4 1000
-    blt.s BEGIN_LOOP
+
+    FIB_INC:
+    ldloc.1
+    dup
+    ldloc.2
+    add
+    stloc.1
+    stloc.2
+
+    LOOP_COND:
+    ldloc.1
+    ldc.i4 4000000
+    ldloc.1
+    call void [mscorlib]System.Console::WriteLine(int32)
+    blt.s LOOP_BEGIN
 
     ldstr "Result:"
     call void [mscorlib]System.Console::WriteLine(class System.String)
-    ldloc.1
+    ldloc.0
     call void [mscorlib]System.Console::WriteLine(int32)
+
     ret
 }
