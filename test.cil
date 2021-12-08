@@ -1,47 +1,253 @@
-.assembly euler {}
 .assembly extern mscorlib {}
+.assembly X {}
+
+.method public static bool[] Sieve(uint32 n)
+{
+    .maxstack 5
+    .locals init (bool[] result, uint32 i, uint32 prime)
+    // create array
+    // init to all true
+    // mark 0,1
+    // for k in 2..n:
+    //   if k is not prime, continue
+    //   if k is prime,
+    //     for j = k*2; j += k; j < n:
+    //       mark j
+    //     done
+    //   endif
+
+    ldstr "[Sieve]"
+    call void [mscorlib]System.Console::WriteLine(class System.String)
+
+    ldstr "[Sieve] Creating Array[{0}]"
+    ldarg n
+    box int32
+    call class [mscorlib]System.String [mscorlib]System.String::Format(class System.String, class System.Object)
+    call void [mscorlib]System.Console::WriteLine(class System.String)
+
+    ldarg n
+    newarr bool[]
+    stloc result
+
+    ldc.i4.0
+    stloc i
+
+    ldstr "[Sieve] Created Array[{0}]"
+    ldarg n
+    box int32
+    call class [mscorlib]System.String [mscorlib]System.String::Format(class System.String, class System.Object)
+    call void [mscorlib]System.Console::WriteLine(class System.String)
+
+    // initialize (i >= 2) to true
+    LOOP_INIT:
+        ldloc result
+        ldloc i
+        ldc.i4.2
+        stelem bool
+        // LOOP_INIT
+        ldloc i
+        ldc.i4.1
+        add
+        dup
+        stloc i
+        ldarg n
+        blt LOOP_INIT
+
+    ldstr "[Sieve] Init complete."
+    call void [mscorlib]System.Console::WriteLine(class System.String)
+
+    // hardcode (i == 0, 1) to false
+    ldloc result
+    ldc.i4.0
+    ldc.i4.0
+    stelem bool
+    ldloc result
+    ldc.i4.1
+    ldc.i4.0
+    stelem bool
+
+    ldc.i4.2
+    stloc i
+
+    // sieve algorithm
+    LOOP_PRIMES:
+        ldloc i
+        stloc prime
+        //
+        // ldstr "[Sieve] LOOP_PRIMES i: {0}, prime: {1}"
+        // ldloc i
+        // box int32
+        // ldloc prime
+        // box int32
+        // call class [mscorlib]System.String [mscorlib]System.String::Format(class System.String, class System.Object, class System.Object)
+        // call void [mscorlib]System.Console::WriteLine(class System.String)
+
+        LOOP_MARK:
+            ldloc i
+            ldloc prime
+            add
+            dup
+            stloc i
+            ldarg n
+            bge END // i > n
+            // mark
+            ldloc result
+            ldloc i
+            ldc.i4.0
+            stelem bool
+            br.s LOOP_MARK
+
+        // get next prime
+        ldloc prime
+        ldc.i4.1
+        add
+        stloc i
+
+        LOOP_FIND_PRIME:
+            ldloc result
+            ldloc i
+            ldelem bool
+            brtrue.s LOOP_PRIMES
+            ldloc i
+            ldc.i4.1
+            add
+            stloc i
+            br.s LOOP_FIND_PRIME
+            // debug
+            // ldstr "[Sieve] found prime: {1}"
+            // ldloc i
+            // box int32
+            // call class [mscorlib]System.String [mscorlib]System.String::Format(class System.String, class System.Object)
+            // call void [mscorlib]System.Console::WriteLine(class System.String)
+    END:
+
+    ldloc result
+    ret
+}
+
+.method public static void PrintTrueIndexes(bool[] vals)
+{
+    .maxstack 5
+    .locals init (int32 i, bool val)
+    ldarg vals
+    call instance int32 [mscorlib]System.Array::get_Length()
+
+    LOOP:
+    ldarg vals
+    ldloc i
+    ldelem bool
+    dup
+    stloc val
+    brfalse CONTINUE
+    ldstr "Index: "
+    call void [mscorlib]System.Console::Write(class System.String)
+    ldstr "{0,3}"
+    ldloc i
+    box int32
+    call class [mscorlib]System.String [mscorlib]System.String::Format(class System.String, class System.Object)
+    // call void [mscorlib]System.String::Format(class System.String)
+    call void [mscorlib]System.Console::WriteLine(class System.String)
+
+    //
+    CONTINUE:
+    ldloc i
+    ldc.i4.1
+    add
+    dup
+    stloc i
+    ldarg vals
+    ldlen
+    blt LOOP
+
+    pop // ?
+    ret
+}
 
 .method public static void Main()
 {
     .entrypoint
-    .maxstack 4
-    .locals init (int32, int32, int32) // acc, fib_{n}, fib_{n-1}
-    ldc.i4.1
-    stloc.1
+    .maxstack 5
+    .locals init (uint64 maxprime, uint64 i, bool[] primes, uint64 n, uint64 val)
 
-    LOOP_BEGIN:
-    // if fib_{n} is even, add to acc
-    ldloc.1
-    ldc.i4.2
-    rem
-    ldc.i4.1
-    beq FIB_INC
-
-    ACC:
-    ldloc.0
-    ldloc.1
-    add
-    stloc.0
-
-    FIB_INC:
-    ldloc.1
-    dup
-    ldloc.2
-    add
-    stloc.1
-    stloc.2
-
-    LOOP_COND:
-    ldloc.1
-    ldc.i4 4000000
-    ldloc.1
-    call void [mscorlib]System.Console::WriteLine(int32)
-    blt.s LOOP_BEGIN
-
-    ldstr "Result:"
+    ldstr "Hello."
     call void [mscorlib]System.Console::WriteLine(class System.String)
-    ldloc.0
-    call void [mscorlib]System.Console::WriteLine(int32)
 
+    ldc.i8 600851475143
+    // ldc.i8 102
+    dup
+    stloc val
+    call float64 [mscorlib]System.Convert::ToDouble(uint64)
+    call float64 [mscorlib]System.Math::Sqrt(float64)
+    call float64 [mscorlib]System.Math::Ceiling(float64)
+    call uint64 [mscorlib]System.Convert::ToUInt64(float64)
+
+    dup
+    stloc n
+
+    ldstr "[Main] n: {0}"
+    ldloc n
+    box uint64
+    call class [mscorlib]System.String [mscorlib]System.String::Format(class System.String, object)
+    call void [mscorlib]System.Console::WriteLine(class System.String)
+
+    call uint32 [mscorlib]System.Convert::ToUInt32(uint64)
+
+    call bool[] Sieve(uint32)
+    // call void PrintTrueIndexes(bool[])
+    stloc primes
+
+    ldc.i8 2
+    dup
+    stloc i
+    stloc maxprime
+
+    LOOP_FIND_MAX_PRIME:
+        ldloc primes
+        ldloc i
+        ldelem bool
+        brfalse CONTINUE
+        ldloc val
+        ldloc i
+        rem
+        brtrue CONTINUE
+        ldloc i
+        stloc maxprime
+        LOOP_REDUCE:
+            ldloc val
+            ldloc maxprime
+            blt END
+            ldloc val
+            ldloc maxprime
+            rem
+            brtrue CONTINUE
+            ldloc val
+            ldloc maxprime
+            div
+            stloc val
+            br.s LOOP_REDUCE
+
+        CONTINUE:
+        ldloc i
+        ldc.i8 1
+        add
+        dup
+        stloc i
+        ldloc n
+        bge END
+        br LOOP_FIND_MAX_PRIME
+
+    END:
+    ldloc val
+    ldloc maxprime
+    blt RESULT
+    ldloc val
+    stloc maxprime
+
+    RESULT:
+    ldstr "Max prime divisor: {0}"
+    ldloc maxprime
+    box uint64
+    call class [mscorlib]System.String [mscorlib]System.String::Format(class System.String, object)
+    call void [mscorlib]System.Console::WriteLine(class System.String)
     ret
 }
