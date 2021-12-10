@@ -1,113 +1,6 @@
 .assembly extern mscorlib {}
+.assembly extern PalindromeTester {}
 .assembly X {}
-
-.method public static bool IsPalindrome(int32 val)
-{
-    .maxstack 16
-    .locals init (int32 i, int32 len, class System.String sval)
-
-    ldc.i4.0
-    stloc i
-
-    ldarga val
-    call instance string [mscorlib]System.Int32::ToString()
-    dup
-    stloc sval
-    // dup
-    // call void [mscorlib]System.Console::WriteLine(class System.String)
-    call instance int32 [mscorlib]System.String::get_Length()
-    stloc len
-    // ldloc len
-    // call void [mscorlib]System.Console::WriteLine(int32)
-
-    LOOP_PALINDROME:
-        br INDEX_TEST
-        DEBUG:
-            // #region debug
-            ldstr "ind: ({0},{2}), val: ({1},{3})"
-
-            ldc.i4.4
-            newarr object
-
-            dup
-            ldc.i4.0
-                ldloc i
-                box int32
-            stelem.ref
-
-            dup
-            ldc.i4.1
-                ldloc sval
-                ldloc i
-                call instance char [mscorlib]System.String::get_Chars(int32)
-                box char
-            stelem.ref
-
-            dup
-            ldc.i4.2
-                ldloc len
-                ldloc i
-                sub
-                ldc.i4.1
-                sub
-                box int32
-            stelem.ref
-
-            dup
-            ldc.i4.3
-                ldloc sval
-                ldloc len
-                ldloc i
-                sub
-                ldc.i4.1
-                sub
-                call instance char [mscorlib]System.String::get_Chars(int32)
-                box char
-            stelem.ref
-
-            call string [mscorlib]System.String::Format(string, object[])
-            call void [mscorlib]System.Console::WriteLine(class System.String)
-            // #endregion
-        INDEX_TEST:
-            ldloc i
-            ldloc len
-            ldloc i
-            sub
-            ldc.i4.1
-            sub
-            bge SUCCESS
-
-        CHAR_TEST:
-            ldloc sval
-            ldloc i
-            // ldc.i4 0
-            callvirt instance char [mscorlib]System.String::get_Chars(int32)
-
-            ldloc sval
-            ldloc len
-            ldloc i
-            sub
-            ldc.i4.1
-            sub
-            callvirt instance char [mscorlib]System.String::get_Chars(int32)
-
-            bne.un FAIL
-
-        LOOP_PALINDROME_INC:
-            ldloc i
-            ldc.i4.1
-            add
-            stloc i
-            br LOOP_PALINDROME
-
-    FAIL:
-    ldc.i4.0
-    ret
-
-    SUCCESS:
-    ldc.i4.1
-    ret
-}
 
 .data minI = int32(100)
 .data maxI = int32(1000)
@@ -129,7 +22,7 @@
             ldloc j
             mul
             dup // | i*j, i*j
-            call bool IsPalindrome(int32)
+            call bool [PalindromeTester]PalindromeTester::IsPalindrome(int32)
 
             brfalse CONTINUE_J_POP
             dup
