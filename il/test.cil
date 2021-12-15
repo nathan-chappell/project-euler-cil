@@ -1,0 +1,228 @@
+.assembly extern mscorlib {}
+.assembly test {}
+
+.data minI = int32(100)
+.data maxI = int32(1000)
+.field public static int32 MinI at minI
+.field public static int32 MaxI at maxI
+
+.class public FNode<U>
+{
+    .field !0 Val
+    .field public class FNode<!0> Next
+
+    .method public instance void .ctor(!0 val)
+    {
+        .maxstack 3
+        ldarg.0
+        ldnull
+        stfld class FNode<!0> class FNode<!0>::Next
+
+        ldarg.0
+        ldarg.1
+        stfld !0 class FNode<!0>::Val
+
+        ret
+    }
+
+    .method public instance string ToString()
+    {
+        .maxstack 3
+        ldarg.0
+        ldfld !0 class FNode<!0>::Val
+        callvirt instance string [mscorlib]System.Object::ToString()
+        ret
+    }
+}
+
+.class public FList<T>
+{
+
+    .field private class FNode<!0> Head
+    .field private class FNode<!0> Tail
+    .field public int32 Count
+
+    .method public instance void .ctor()
+    {
+        .maxstack 5
+        ldarg.0
+        ldnull
+        stfld class FNode<!0> class FList<!0>::Head
+
+        ldarg.0
+        ldnull
+        stfld class FNode<!0> class FList<!0>::Tail
+
+        ldarg.0
+        ldc.i4.0
+        stfld int32 class FList<!0>::Count
+
+        ret
+    }
+
+    .method public instance bool IsEmpty()
+    {
+        .maxstack 5
+
+        ldarg.0
+        ldfld class FNode<!0> class FList<!0>::Head
+        ldnull
+        beq EMPTY
+
+        NOT_EMPTY:
+        ldc.i4.1
+        ret
+
+        EMPTY:
+        ldc.i4.1
+        ret
+    }
+
+    .method private instance void StartList(class FNode<!0> newNode)
+    {
+        ldarg.0
+        ldarg newNode
+        stfld class FNode<!0> class FList<!0>::Tail
+
+        ldarg.0
+        ldarg newNode
+        stfld class FNode<!0> class FList<!0>::Head
+
+        ldarg.0
+        ldc.i4.1
+        stfld int32 class FList<!0>::Count
+
+        ret
+    }
+
+    .method public instance class FList<!0> Add(!0 val)
+    {
+        .maxstack 8
+        .locals init (class FNode<!0> newNode)
+
+        ldarg val
+        newobj instance void class FNode<!0>::.ctor(!0)
+        stloc newNode
+
+        ldarg.0
+        ldfld class FNode<!0> class FList<!0>::Tail
+        brfalse START_LIST
+
+        APPEND:
+
+        ldarg.0
+        ldfld class FNode<!0> class FList<!0>::Tail
+        ldloc newNode
+        stfld class FNode<!0> class FNode<!0>::Next
+        ldarg.0
+        ldloc newNode
+        stfld class FNode<!0> class FList<!0>::Tail
+
+        ldarg.0
+        dup
+        ldfld int32 class FList<!0>::Count
+        ldc.i4.1
+        add
+        stfld int32 class FList<!0>::Count
+
+        br END
+
+        START_LIST:
+        ldarg.0
+        ldloc newNode
+        call instance void class FList<!0>::StartList(class FNode<!0>)
+
+        END:
+        ldarg.0
+        ret
+    }
+
+    .method private static string GetItemsString(class FNode<!0> curNode)
+    {
+        .maxstack 8
+        .locals init (string result)
+        ldstr "("
+        stloc result
+
+        LOOP:
+            ldarg curNode
+            brfalse END
+
+            ldloc result
+            ldstr "{0}, "
+            ldarg curNode
+            ldfld !0 class FNode<!0>::Val
+            box !0
+            call string [mscorlib]System.String::Format(string, object)
+            // callvirt instance string [mscorlib]System.Object::ToString()
+            call string [mscorlib]System.String::Concat(string, string)
+            stloc result
+
+            ldarg curNode
+            ldfld class FNode<!0> class FNode<!0>::Next
+            starg curNode
+            br LOOP
+
+        END:
+        ldloc result
+        ldstr ")"
+        call string [mscorlib]System.String::Concat(string, string)
+        ret
+    }
+
+    .method public instance string ToString()
+    {
+        .maxstack 4
+        .locals init (string typeName, string items, string template)
+        ldstr "List<{0}>[{1}]"
+        stloc template
+
+        // typename
+        ldtoken !0
+        call class [mscorlib]System.Type [mscorlib]System.Type::GetTypeFromHandle(valuetype [mscorlib]System.RuntimeTypeHandle)
+        callvirt instance string [mscorlib]System.Type::get_Name()
+        stloc typeName
+
+        // items
+        ldarg.0
+        ldfld class FNode<!0> class FList<!0>::Head
+        call string class FList<!0>::GetItemsString(class FNode<!0>)
+        stloc items
+
+        ldloc template
+        ldloc typeName
+        ldloc items
+        call string [mscorlib]System.String::Format(string, object, object)
+        ret
+    }
+}
+
+.method public static void Main()
+{
+    .entrypoint
+    .maxstack 5
+    .locals init (class FList<int32> list)
+
+    ldstr "Hello."
+    call void [mscorlib]System.Console::WriteLine(class System.String)
+    newobj instance void class FList<int32>::.ctor()
+    stloc list
+    ldloc list
+    call instance bool class FList<int32>::IsEmpty()
+    call void [mscorlib]System.Console::WriteLine(bool)
+
+    ldloc list
+    ldc.i4.1
+    call instance class FList<!0> class FList<int32>::Add(!0)
+    ldc.i4.2
+    call instance class FList<!0> class FList<int32>::Add(!0)
+    ldc.i4.3
+    call instance class FList<!0> class FList<int32>::Add(!0)
+    ldloc list
+    ldfld int32 class FList<int32>::Count
+    call void [mscorlib]System.Console::WriteLine(int32)
+    call instance string class FList<int32>::ToString()
+    call void [mscorlib]System.Console::WriteLine(string)
+
+    ret
+}

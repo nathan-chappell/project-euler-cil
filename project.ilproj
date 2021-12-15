@@ -1,0 +1,59 @@
+<Project>
+
+    <PropertyGroup>
+        <RuntimeConfigContent><![CDATA[
+{
+  "runtimeOptions": {
+    "framework": {
+      "name": "Microsoft.NETCore.App",
+      "version": "5.0.5"
+    }
+  }
+}]]>
+        </RuntimeConfigContent>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <IlLibs Include="None" />
+        <IlExes Include="il/test.cil" />
+        <CsLibs Include="None" />
+    </ItemGroup>
+
+    <Target Name="All">
+        <CallTarget Targets="CreateRuntimeConfig;AssembleIl;DisassembleCs;Run" />
+    </Target>
+
+    <Target Name="CreateRuntimeConfig" BeforeTargets="AssembleIl">
+        <ItemGroup>
+            <RuntimeConfigFiles Include="@(IlExes->Replace('.cil','.runtimeconfig.json'))" />
+        </ItemGroup>
+        <Message Text="CreateRuntimeConfig: %(RuntimeConfigFiles.Identity)" />
+        <WriteLinesToFile File="%(RuntimeConfigFiles.Identity)" Overwrite="true" Lines="$(RuntimeConfigContent)" />
+    </Target>
+
+    <Target Name="AssembleIl">
+        <Message Text="Assembling Libs: @(IlLibs)" />
+        <Exec Condition="'@(IlLibs)' != 'None'" Command="ilasm %(IlLibs.Identity) /DLL" />
+        <Message Text="Assembling Exes: @(IlExes)" />
+        <Exec Command="ilasm %(IlExes.Identity) /DLL" />
+        <ItemGroup>
+            <ExecutableDlls Include="@(IlExes->Replace('.cil','.dll'))" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="DisassembleCs" Condition="'@(CsLibs)' != 'None'">
+        <Message Text="Compiling CsLibs: @()" />
+        <Csc Sources="%(CsLibs.Identity)" TargetType="library">
+            <Output TaskParameter="OutputAssembly" ItemName="CompiledAssemblies"/>
+        </Csc>
+        <Message Text="Disassembling CsLibs: @(IlExes)" />
+        <Exec Command="ildasm %(CompiledAssemblies.Identity)" />
+    </Target>
+
+    <Target Name="Run">
+        <Message Text="Running..." />
+        <Exec Command="dotnet %(ExecutableDlls.Identity)" />
+        <Message Text="...Done" />
+    </Target>
+
+</Project>
