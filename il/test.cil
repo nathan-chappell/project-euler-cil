@@ -8,19 +8,19 @@
 
 .class public FNode<U>
 {
-    .field !0 Val
-    .field public class FNode<!0> Next
+    .field public !U Val
+    .field public class FNode<!U> Next
 
-    .method public instance void .ctor(!0 val)
+    .method public instance void .ctor(!U val)
     {
         .maxstack 3
         ldarg.0
         ldnull
-        stfld class FNode<!0> class FNode<!0>::Next
+        stfld class FNode<!U> class FNode<!U>::Next
 
         ldarg.0
         ldarg.1
-        stfld !0 class FNode<!0>::Val
+        stfld !U class FNode<!U>::Val
 
         ret
     }
@@ -29,7 +29,7 @@
     {
         .maxstack 3
         ldarg.0
-        ldfld !0 class FNode<!0>::Val
+        ldfld !U class FNode<!U>::Val
         callvirt instance string [mscorlib]System.Object::ToString()
         ret
     }
@@ -38,8 +38,8 @@
 .class public FList<T>
 {
 
-    .field private class FNode<!0> Head
-    .field private class FNode<!0> Tail
+    .field public class FNode<!0> Head
+    .field public class FNode<!0> Tail
     .field public int32 Count
 
     .method public instance void .ctor()
@@ -106,7 +106,8 @@
 
         ldarg.0
         ldfld class FNode<!0> class FList<!0>::Tail
-        brfalse START_LIST
+        ldnull
+        beq START_LIST
 
         APPEND:
 
@@ -128,6 +129,9 @@
         br END
 
         START_LIST:
+        ldstr "START_LIST"
+        call void [mscorlib]System.Console::WriteLine(string)
+
         ldarg.0
         ldloc newNode
         call instance void class FList<!0>::StartList(class FNode<!0>)
@@ -197,10 +201,89 @@
     }
 }
 
+.class public PowerLTMapper
+{
+    .field int32 Max
+    .method public instance void .ctor(int32 max)
+    {
+        .maxstack 3
+        ldarg.0
+        ldarg max
+        stfld int32 class PowerLTMapper::Max
+        ret
+    }
+
+    .method public instance int32 Map(int32 val, int32 i)
+    {
+       .locals (int32 cur)
+       .maxstack 8
+       ldc.i4.1
+       ret
+       ldarg val
+       dup
+       stloc cur
+
+        LOOP:
+            ldloc cur
+            ldarg.0
+            ldfld int32 PowerLTMapper::Max
+            bge DONE
+
+            ldloc cur
+            ldarg val
+            mul
+            stloc cur
+            br LOOP
+
+        DONE:
+        ldloc cur
+        ret
+    }
+}
+
+.method public static class FList<int32> Int32Map(class FList<int32> list, class [mscorlib]System.Func`3<int32,int32,int32> mapper)
+{
+    .locals (class FList<int32> result, class FNode<int32> curNode, int32 i)
+    newobj instance void class FList<int32>::.ctor()
+    stloc result
+
+    ldloc result
+    ldfld class FNode<!0> class FList<int32>::Head
+    stloc curNode
+    ldloc curNode
+    call void [mscorlib]System.Console::WriteLine(object)
+
+    LOOP:
+        ldloc curNode
+        ldnull
+        beq DONE
+    ldstr "foobar"
+    call void [mscorlib]System.Console::WriteLine(string)
+
+        ldloc result
+        ldarg mapper
+        ldloc curNode
+        ldfld !0 class FNode<int32>::Val
+        ldloc i
+        // call instance int32 Int32Mapper::Invoke(int32)
+        callvirt instance !2 class [mscorlib]System.Func`3<int32,int32,int32>::Invoke(!0, !1)
+        call instance class FList<!0> class FList<int32>::Add(!0)
+        pop
+
+        ldloc i
+        ldc.i4.1
+        add
+        stloc i
+
+    DONE:
+        ldloc result
+        ret
+}
+
 .method public static void Main()
 {
     .entrypoint
-    .maxstack 5
+    .maxstack 12
     .locals init (class FList<int32> list)
 
     ldstr "Hello."
@@ -212,15 +295,23 @@
     call void [mscorlib]System.Console::WriteLine(bool)
 
     ldloc list
-    ldc.i4.1
-    call instance class FList<!0> class FList<int32>::Add(!0)
     ldc.i4.2
     call instance class FList<!0> class FList<int32>::Add(!0)
     ldc.i4.3
     call instance class FList<!0> class FList<int32>::Add(!0)
-    ldloc list
+    ldc.i4.5
+    call instance class FList<!0> class FList<int32>::Add(!0)
     ldfld int32 class FList<int32>::Count
     call void [mscorlib]System.Console::WriteLine(int32)
+
+    ldloc list
+    ldc.i4 20
+    newobj instance void class PowerLTMapper::.ctor(int32)
+    ldftn instance int32 class PowerLTMapper::Map(int32, int32)
+    // call instance void class Int32Mapper::.ctor(object, native int)
+    newobj instance void class [mscorlib]System.Func`3<int32,int32,int32>::.ctor(object, native int)
+    call class FList<int32> Int32Map(class FList<int32>, class [mscorlib]System.Func`3<int32,int32,int32>)
+
     call instance string class FList<int32>::ToString()
     call void [mscorlib]System.Console::WriteLine(string)
 
