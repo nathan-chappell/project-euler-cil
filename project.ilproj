@@ -33,9 +33,11 @@
 
     <Target Name="AssembleIl">
         <Message Text="Assembling Libs: @(IlLibs)" />
-        <Exec Condition="'@(IlLibs)' != 'None'" Command="ilasm %(IlLibs.Identity) /DLL" />
+        <Exec Condition="'@(IlLibs)' != 'None' And !$([MSBuild]::IsOSUnixLike())" Command="ilasm %(IlLibs.Identity) /DLL" />
+        <Exec Condition="'@(IlLibs)' != 'None' And $([MSBuild]::IsOSUnixLike())" Command="ilasm -DLL %(IlLibs.Identity)" />
         <Message Text="Assembling Exes: @(IlExes)" />
-        <Exec Command="ilasm %(IlExes.Identity) /DLL" />
+        <Exec Condition="!$([MSBuild]::IsOSUnixLike())" Command="ilasm %(IlExes.Identity) /DLL" />
+        <Exec Condition="$([MSBuild]::IsOSUnixLike())" Command="ilasm -DLL %(IlExes.Identity)" />
         <ItemGroup>
             <ExecutableDlls Include="@(IlExes->Replace('.cil','.dll'))" />
         </ItemGroup>

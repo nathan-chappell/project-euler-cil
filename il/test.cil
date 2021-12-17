@@ -30,6 +30,7 @@
         .maxstack 3
         ldarg.0
         ldfld !U class FNode<!U>::Val
+        box !U
         callvirt instance string [mscorlib]System.Object::ToString()
         ret
     }
@@ -80,6 +81,10 @@
 
     .method private instance void StartList(class FNode<!0> newNode)
     {
+        // ldarg newNode
+        // dup
+        // stfld class FNode<!0> class FNode<!0>::Next
+
         ldarg.0
         ldarg newNode
         stfld class FNode<!0> class FList<!0>::Tail
@@ -217,25 +222,43 @@
     {
        .locals (int32 cur)
        .maxstack 8
-       ldc.i4.1
-       ret
+
+       ldstr "<PowerLTMapper; Max={0}, val={1}>"
+       ldarg.0
+       ldfld int32 class PowerLTMapper::Max
+       box int32
        ldarg val
-       dup
+       box int32
+       call string [mscorlib]System.String::Format(string, object, object)
+       call void [mscorlib]System.Console::WriteLine(string)
+
+       ldarg val
        stloc cur
 
-        LOOP:
-            ldloc cur
-            ldarg.0
-            ldfld int32 PowerLTMapper::Max
-            bge DONE
+       LOOP:
+           ldstr "{0} mapped to: {1}"
+           ldarg val
+           box int32
+           ldloc cur
+           box int32
+           call string [mscorlib]System.String::Format(string, object, object)
+           call void [mscorlib]System.Console::WriteLine(string)
 
-            ldloc cur
-            ldarg val
-            mul
-            stloc cur
-            br LOOP
+           ldloc cur
+           ldarg val
+           mul
+           dup
+
+           ldarg.0
+           ldfld int32 PowerLTMapper::Max
+           bge DONE
+           stloc cur
+
+           br LOOP
+
 
         DONE:
+        pop
         ldloc cur
         ret
     }
@@ -247,18 +270,21 @@
     newobj instance void class FList<int32>::.ctor()
     stloc result
 
-    ldloc result
+    ldstr "Int32Map"
+    call void [mscorlib]System.Console::WriteLine(string)
+
+    ldarg list
     ldfld class FNode<!0> class FList<int32>::Head
     stloc curNode
     ldloc curNode
-    call void [mscorlib]System.Console::WriteLine(object)
+    ldnull
+    ceq
+    call void [mscorlib]System.Console::WriteLine(bool)
 
     LOOP:
         ldloc curNode
         ldnull
         beq DONE
-    ldstr "foobar"
-    call void [mscorlib]System.Console::WriteLine(string)
 
         ldloc result
         ldarg mapper
@@ -268,12 +294,19 @@
         // call instance int32 Int32Mapper::Invoke(int32)
         callvirt instance !2 class [mscorlib]System.Func`3<int32,int32,int32>::Invoke(!0, !1)
         call instance class FList<!0> class FList<int32>::Add(!0)
-        pop
+        // pop
+        call instance string class FList<int32>::ToString()
+        call void [mscorlib]System.Console::WriteLine(class System.String)
 
         ldloc i
         ldc.i4.1
         add
         stloc i
+
+        ldloc curNode
+        ldfld class FNode<!0> class FNode<int32>::Next
+        stloc curNode
+        br LOOP
 
     DONE:
         ldloc result
@@ -303,6 +336,11 @@
     call instance class FList<!0> class FList<int32>::Add(!0)
     ldfld int32 class FList<int32>::Count
     call void [mscorlib]System.Console::WriteLine(int32)
+
+    ldloc list
+    ldfld class FNode<!0> class FList<int32>::Head
+    call instance string class FNode<int32>::ToString()
+    call void [mscorlib]System.Console::WriteLine(object)
 
     ldloc list
     ldc.i4 20
