@@ -11,19 +11,22 @@
   }
 }]]>
         </RuntimeConfigContent>
+      <OutputPath>il</OutputPath>
     </PropertyGroup>
 
     <ItemGroup>
         <IlLibs Include="None" />
-        <IlExes Include="il/test.cil" />
+        <!--<IlExes Include="il/test.cil;il/collatz.cil" />-->
+        <IlExes Include="il/collatz.cil" />
         <CsLibs Include="None" />
+        <Watch Include="il/*.cil" />
     </ItemGroup>
 
     <Target Name="All">
         <CallTarget Targets="CreateRuntimeConfig;AssembleIl;DisassembleCs;Run" />
     </Target>
 
-    <Target Name="CreateRuntimeConfig" BeforeTargets="AssembleIl">
+    <Target Name="CreateRuntimeConfig">
         <ItemGroup>
             <RuntimeConfigFiles Include="@(IlExes->Replace('.cil','.runtimeconfig.json'))" />
         </ItemGroup>
@@ -31,7 +34,7 @@
         <WriteLinesToFile File="%(RuntimeConfigFiles.Identity)" Overwrite="true" Lines="$(RuntimeConfigContent)" />
     </Target>
 
-    <Target Name="AssembleIl">
+    <Target Name="AssembleIl" DependsOnTargets="CreateRuntimeConfig">
         <Message Text="Assembling Libs: @(IlLibs)" />
         <Exec Condition="'@(IlLibs)' != 'None' And !$([MSBuild]::IsOSUnixLike())" Command="ilasm %(IlLibs.Identity) /DLL" />
         <Exec Condition="'@(IlLibs)' != 'None' And $([MSBuild]::IsOSUnixLike())" Command="ilasm -DLL %(IlLibs.Identity)" />
@@ -52,9 +55,11 @@
         <Exec Command="ildasm %(CompiledAssemblies.Identity)" />
     </Target>
 
-    <Target Name="Run">
-        <Message Text="Running..." />
-        <Exec Command="dotnet %(ExecutableDlls.Identity)" />
+    <Import Project="$(MSBuildExtensionsPath)\Microsoft.Common.targets" />
+
+    <Target Name="Run" DependsOnTargets="AssembleIl">
+        <Message Text="Running... %(ExecutableDlls.Identity)" />
+        <Exec Command="dotnet %(ExecutableDlls.Identity)" Condition="'@(ExecutableDlls)' != ''"/>
         <Message Text="...Done" />
     </Target>
 

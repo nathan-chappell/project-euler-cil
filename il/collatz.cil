@@ -1,0 +1,16 @@
+// collatz sequence:
+// f(n) =
+//      n/2    : n even
+//      3n + 1 : n odd
+
+.assembly extern mscorlib {}
+.assembly collatz {}
+
+.method public static void Main()
+{
+    .entrypoint
+
+    ldstr "collatz2"
+    call void [mscorlib]System.Console::WriteLine(string)
+    ret
+}
