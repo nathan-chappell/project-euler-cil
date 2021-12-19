@@ -6,11 +6,71 @@
 .assembly extern mscorlib {}
 .assembly collatz {}
 
+.class public ValueChangedEventHandler extends class [mscorlib]System.EventHandler`1<int32> { }
+
+.class public interface abstract IValueChanged
+{
+    .event ValueChangedEventHandler ValueChanged
+    {
+        .addon instance void IValueChanged::add_ValueChanged(class ValueChangedEventHandler)
+        .removeon instance void IValueChanged::remove_ValueChanged(class ValueChangedEventHandler)
+        .fire instance void IValueChanged::fire_ValueChanged(int32)
+    }
+    .method public abstract virtual instance void add_ValueChanged(class ValueChangedEventHandler) {}
+    .method public abstract virtual instance void remove_ValueChanged(class ValueChangedEventHandler) {}
+    .method public abstract virtual instance void fire_ValueChanged(int32) {}
+}
+
+.class public abstract BaseOpNode implements IValueChanged
+{
+    .field private class ValueChangedEventHandler valueChangedEventHandler
+    .method family virtual abstract int32 Execute(int32) {}
+    .method public virtual instance void add_ValueChanged(class ValueChangedEventHandler nextHandler) 
+    {
+        ldarg.0
+        dup
+        ldfld class ValueChangedEventHandler BaseOpNode::valueChangedEventHandler
+        ldarg nextHandler
+        call class [mscorlib]System.Delegate 
+            class [mscorlib]System.Delegate::Combine(
+                class [mscorlib]System.Delegate,
+                class [mscorlib]System.Delegate)
+        castclass ValueChangedEventHandler
+        stfld class ValueChangedEventHandler BaseOpNode::valueChangedEventHandler
+        ret
+    }
+    .method public virtual instance void remove_ValueChanged(class ValueChangedEventHandler nextHandler) 
+    {
+        ldarg.0
+        dup
+        ldfld class ValueChangedEventHandler BaseOpNode::valueChangedEventHandler
+        ldarg nextHandler
+        call class [mscorlib]System.Delegate 
+            class [mscorlib]System.Delegate::Remove(
+                class [mscorlib]System.Delegate,
+                class [mscorlib]System.Delegate)
+        castclass ValueChangedEventHandler
+        stfld class ValueChangedEventHandler BaseOpNode::valueChangedEventHandler
+        ret
+    }
+    .method public virtual instance void fire_ValueChanged(int32 val) 
+    {
+        // this.valueChangedEventHandler.Invoke(this.Execute(val))
+        ldarg.0
+        ldfld class ValueChangedEventHandler BaseOpNode::valueChangedEventHandler
+        ldarg.0
+        dup
+        ldarg val
+        callvirt instance int32 BaseOpNode::Execute(int32)
+        callvirt instance void class ValueChangedEventHandler::Invoke(object, int32)
+    }
+}
+
 .method public static void Main()
 {
     .entrypoint
 
-    ldstr "collatz2"
-    call void [mscorlib]System.Console::WriteLine(string)
-    ret
+        ldstr "collatz2"
+        call void [mscorlib]System.Console::WriteLine(string)
+        ret
 }
