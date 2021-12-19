@@ -90,12 +90,6 @@
     }
     .method family virtual instance int32 Execute(int32 val)
     {
-        ldstr "[Execute]: {0}"
-        ldarg val
-        box int32
-        call string [mscorlib]System.String::Format(string, object)
-        call void [mscorlib]System.Console::WriteLine(string)
-
         ldarg.0
         ldfld class [mscorlib]System.Func`2<int32,int32> UnOpNode::op
         ldarg val
@@ -137,13 +131,19 @@
     {
         .override method instance void class IValueChanged::fire_ValueChanged(object, int32)
         .locals (class BaseCompGraphNode nextNode)
+        ldarg.0
+        ldfld class [mscorlib]System.EventHandler`1<int32> class BaseCompGraphNode::valueChangedEventHandler
+        dup
+        brfalse AFTER_EVENT_POP
+        ldarg sender
+        ldarg val
+        callvirt instance void class [mscorlib]System.EventHandler`1<int32>::Invoke(object, !0)
+        br AFTER_EVENT
 
-ldstr "[fire_ValueChanged]: {0}"
-ldarg val
-box int32
-call string [mscorlib]System.String::Format(string, object)
-call void [mscorlib]System.Console::WriteLine(string)
+        AFTER_EVENT_POP:
+        pop
 
+        AFTER_EVENT:
         ldarg.0
         ldfld class [mscorlib]System.Func`2<int32,bool> DecisionNode::pred
         ldarg val
@@ -151,16 +151,12 @@ call void [mscorlib]System.Console::WriteLine(string)
         brtrue TRUE_PATH
 
         FALSE_PATH:
-ldstr "[fire_ValueChanged]: FALSE_PATH"
-call void [mscorlib]System.Console::WriteLine(string)
             ldarg.0
             ldfld class BaseCompGraphNode DecisionNode::elseNode
             stloc nextNode
             br CALL_NEXT
 
         TRUE_PATH:
-ldstr "[fire_ValueChanged]: TRUE_PATH"
-call void [mscorlib]System.Console::WriteLine(string)
             ldarg.0
             ldfld class BaseCompGraphNode DecisionNode::ifNode
             stloc nextNode
@@ -216,12 +212,6 @@ call void [mscorlib]System.Console::WriteLine(string)
     }
     .method public static bool IsEven(int32 val)
     {
-        ldstr "IsEven({0})"
-        ldarg val
-        box int32
-        call string [mscorlib]System.String::Format(string, object)
-        call void [mscorlib]System.Console::WriteLine(string)
-
         ldarg val
         ldc.i4.2
         rem
@@ -346,12 +336,30 @@ call void [mscorlib]System.Console::WriteLine(string)
     {
         ldarg.0
         call instance void CollatzSequence::initNodes()
+        //
+        ldarg.0
+        ldfld class DecisionNode class CollatzSequence::IsCompleteNode
+        //
+        ldarg.0
+        ldftn instance void class CollatzSequence::handle_OnIsComplete(object, int32)
+        newobj instance void class [mscorlib]System.EventHandler`1<int32>::.ctor(object, native int)
+        callvirt instance void class IValueChanged::add_ValueChanged(class [mscorlib]System.EventHandler`1<int32>)
         ret
     }
 
     .property int32 SequenceVal()
     {
         .set instance void CollatzSequence::set_SequenceVal(int32)
+    }
+
+    .method private instance void handle_OnIsComplete(object o, int32 val)
+    {
+        ldstr "[handle_OnIsComplete] val: {0}"
+        ldarg val
+        box int32
+        call string [mscorlib]System.String::Format(string, object)
+        call void [mscorlib]System.Console::WriteLine(string)
+        ret
     }
 
     .method public instance void set_SequenceVal(int32 val)
@@ -385,7 +393,7 @@ call void [mscorlib]System.Console::WriteLine(string)
     stloc s
 
     ldloc s
-    ldc.i4 15
+    ldc.i4 135
     call instance void class CollatzSequence::set_SequenceVal(int32)
 
     ret
