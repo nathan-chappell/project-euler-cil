@@ -9,11 +9,22 @@
     {
         .addon instance void IValueChanged::add_ValueChanged(class ValueChangedEventHandler)
         .removeon instance void IValueChanged::remove_ValueChanged(class ValueChangedEventHandler)
-        .fire instance void IValueChanged::fire_ValueChanged(int32)
+        .fire instance void IValueChanged::fire_ValueChanged(object, int32)
     }
     .method public abstract virtual instance void add_ValueChanged(class ValueChangedEventHandler) {}
     .method public abstract virtual instance void remove_ValueChanged(class ValueChangedEventHandler) {}
-    .method public abstract virtual instance void fire_ValueChanged(int32) {}
+    .method public abstract virtual instance void fire_ValueChanged(object, int32) {}
+}
+
+.method public static void ConnectValueChangedEvents(class IValueChanged l, class IValueChanged r)
+{
+    // l.fire causes r to fire
+    ldarg l
+    ldarg r
+    ldftn instance void IValueChanged::fire_ValueChanged(object, int32)
+    newobj instance void class ValueChangedEventHandler::.ctor(object, native int)
+    callvirt instance void IValueChanged::add_ValueChanged(class ValueChangedEventHandler)
+    ret
 }
 
 .class public abstract BaseCompGraphNode implements IValueChanged
@@ -56,7 +67,7 @@
 .class public abstract BaseOpNode extends BaseCompGraphNode
 {
     .method family virtual abstract int32 Execute(int32) {}
-    .method public virtual instance void fire_ValueChanged(int32 val) 
+    .method public virtual instance void fire_ValueChanged(object sender, int32 val) 
     {
         // this.valueChangedEventHandler.Invoke(this.Execute(val))
         .override method instance void class IValueChanged::fire_ValueChanged(int32)
@@ -93,7 +104,7 @@
     {
         ldarg.0
         ldarg val
-        callvirt instance void BaseOpNode::fire_ValueChanged(int32)
+        callvirt instance void BaseOpNode::fire_ValueChanged(object, int32)
         ret
     }
 }
@@ -101,28 +112,28 @@
 .class public DecisionNode extends BaseCompGraphNode
 {
     .field private class [mscorlib]System.Func`2<int32,bool> pred
-    .field private class BaseCompGraphNode onTrueNode
-    .field private class BaseCompGraphNode onFalseNode
+    .field private class BaseCompGraphNode ifNode
+    .field private class BaseCompGraphNode elseNode
 
     .method public instance void .ctor(
             class [mscorlib]System.Func`2<int32,bool> pred,
-            class BaseCompGraphNode onTrueNode,
-            class BaseCompGraphNode onFalseNode)
+            class BaseCompGraphNode ifNode,
+            class BaseCompGraphNode elseNode)
     {
         ldarg.0
         ldarg pred
         stfld class [mscorlib]System.Func`2<int32,bool> DecisionNode::pred
         ldarg.0
-        ldarg onTrueNode
-        stfld class BaseCompGraphNode DecisionNode::onTrueNode
+        ldarg ifNode
+        stfld class BaseCompGraphNode DecisionNode::ifNode
         ldarg.0
-        ldarg onFalseNode
-        stfld class BaseCompGraphNode DecisionNode::onFalseNode
+        ldarg elseNode
+        stfld class BaseCompGraphNode DecisionNode::elseNode
         ret
     }
-    .method public virtual instance void fire_ValueChanged(int32 val)
+    .method public virtual instance void fire_ValueChanged(object sender, int32 val)
     {
-        .override method instance void class BaseCompGraphNode::fire_ValueChanged(int32)
+        .override method instance void class BaseCompGraphNode::fire_ValueChanged(object, int32)
         .locals (class BaseCompGraphNode nextNode)
         ldarg.0
         ldfld class [mscorlib]System.Func`2<int32,bool> DecisionNode::pred
@@ -132,13 +143,13 @@
 
         FALSE_PATH:
             ldarg.0
-            ldfld class BaseCompGraphNode DecisionNode::onFalseNode
+            ldfld class BaseCompGraphNode DecisionNode::elseNode
             stloc nextNode
             br CALL_NEXT
 
         TRUE_PATH:
             ldarg.0
-            ldfld class BaseCompGraphNode DecisionNode::onTrueNode
+            ldfld class BaseCompGraphNode DecisionNode::ifNode
             stloc nextNode
             br CALL_NEXT
 
@@ -147,7 +158,7 @@
             dup
             brfalse NULL_PATH
             ldarg val
-            callvirt instance void BaseCompGraphNode::fire_ValueChanged(int32)
+            callvirt instance void BaseCompGraphNode::fire_ValueChanged(object, int32)
             ret
 
         NULL_PATH:
@@ -190,6 +201,12 @@
     }
     .method public bool IsEven(int32 val)
     {
+        ldstr "IsEven({0})"
+        ldarg val
+        box int32
+        call string [mscorlib]System.String::Format(string, object)
+        call void [mscorlib]System.Console::WriteLine(string)
+
         ldarg val
         ldc.i4.2
         rem
@@ -223,11 +240,21 @@
 
     .method private instance void initNodes()
     {
+        .locals (
+                class UnOpNode addNode,
+                class UnOpNode mulNode,
+                class UnOpNode divNode, 
+                class DecisionNode isEvenNode,
+                class DecisionNode isCompleteNode
+                )
+
         ldarg.0
         ldnull
         ldftn int32 CollatzMethods::DivideByTwo(int32)
         newobj instance void class [mscorlib]System.Func`2<int32, int32>::.ctor(object, native int)
         newobj instance void class UnOpNode::.ctor(class [mscorlib]System.Func`2<int32, int32>)
+        dup
+        stloc divNode
         stfld class UnOpNode class CollatzSequence::DivideByTwo
 
         ldarg.0
@@ -235,6 +262,8 @@
         ldftn int32 CollatzMethods::MultiplyByThree(int32)
         newobj instance void class [mscorlib]System.Func`2<int32, int32>::.ctor(object, native int)
         newobj instance void class UnOpNode::.ctor(class [mscorlib]System.Func`2<int32, int32>)
+        dup
+        stloc mulNode
         stfld class UnOpNode class CollatzSequence::MultiplyByThreeNode
 
         ldarg.0
@@ -242,37 +271,65 @@
         ldftn int32 CollatzMethods::AddOne(int32)
         newobj instance void class [mscorlib]System.Func`2<int32, int32>::.ctor(object, native int)
         newobj instance void class UnOpNode::.ctor(class [mscorlib]System.Func`2<int32, int32>)
+        dup
+        stloc addNode
         stfld class UnOpNode class CollatzSequence::AddOneNode
-
-        // Connect MultiplyByThree -> AddOne
-        ldarg.0
-        ldfld class UnOpNode class CollatzSequence::MultiplyByThree
-        ldarg.0
-        ldfld class UnOpNode class CollatzSequence::AddOneNode
-        ldvirtftn instance void class UnOpNode::OnValueChangedHandler(int32)
-        newobj instance void class ValueChangedEventHandler::.ctor(object, native int)
-        callvirt instance void class UnOpNode::add_ValueChanged(ValueChangedEventHandler)
-        // create event handler
 
         ldarg.0
         ldnull
-        ldftn int32 CollatzMethods::IsEven(int32)
-        newobj instance void class [mscorlib]System.Func`2<int32, int32>::.ctor(object, native int)
-        newobj instance void class UnOpNode::.ctor(class [mscorlib]System.Func`2<int32, int32>)
+        ldftn bool CollatzMethods::IsEven(int32)
+        newobj instance void class [mscorlib]System.Func`2<int32, bool>::.ctor(object, native int)
+        ldloc divNode
+        ldloc mulNode
+        newobj instance void class DecisionNode::.ctor(
+                class [mscorlib]System.Func`2<int32, bool>,
+                class BaseCompGraphNode,
+                class BaseCompGraphNode)
+        dup
+        stloc isEvenNode
         stfld class UnOpNode class CollatzSequence::IsEvenNode
 
         ldarg.0
         ldnull
-        ldftn int32 CollatzMethods::IsComplete(int32)
-        newobj instance void class [mscorlib]System.Func`2<int32, int32>::.ctor(object, native int)
-        newobj instance void class UnOpNode::.ctor(class [mscorlib]System.Func`2<int32, int32>)
-        stfld class UnOpNode class CollatzSequence::IsCompleteNode
+        ldftn bool class CollatzMethods::IsComplete(int32)
+        newobj instance void class [mscorlib]System.Func`2<int32,bool>::.ctor(object, native int)
+        ldloc isEvenNode
+        ldnull
+        newobj instance void class DecisionNode::.ctor(
+                class [mscorlib]System.Func`2<int32, bool>,
+                class BaseCompGraphNode,
+                class BaseCompGraphNode)
+        dup
+        stfld class DecisionNode class CollatzSequence::IsCompleteNode
+
+        // Connect:
+        // IsEvenNode* -> MultiplyByThreeNode
+        // IsEvenNode* -> DivideByTwoNode
+        // MultiplyByThreeNode -> AddOneNode
+        // AddOneNode -> IsCompleteNode
+        // DivideByTwoNode -> IsCompleteNode
+        // IsCompleteNode -> IsEvenNode
+
+        ldloc mulNode
+        ldloc addNode
+        call void ConnectValueChangedEvents(class IValueChanged, class IValueChanged)
+
+        ldloc addNode
+        ldloc isCompleteNode
+        call void ConnectValueChangedEvents(class IValueChanged, class IValueChanged)
+
+        ldloc divNode
+        ldloc isCompleteNode
+        call void ConnectValueChangedEvents(class IValueChanged, class IValueChanged)
+
+        ret
     }
 
     .method public instance void .ctor()
     {
         ldarg.0
         call instance void CollatzSequence::initNodes()
+        ret
     }
 }
 
@@ -280,7 +337,7 @@
 {
     .entrypoint
 
-        ldstr "collatz2"
-        call void [mscorlib]System.Console::WriteLine(string)
-        ret
+    ldstr "collatz2"
+    call void [mscorlib]System.Console::WriteLine(string)
+    ret
 }
