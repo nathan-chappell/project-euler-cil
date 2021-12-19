@@ -331,6 +331,28 @@
         call instance void CollatzSequence::initNodes()
         ret
     }
+
+    .property int32 SequenceVal()
+    {
+        .set instance void class CollatzSequence::set_SequenceVal(int32)
+    }
+
+    .method private instance void set_SequenceVal(int32 val)
+    {
+        ldstr "Setting SequenceVal: {0}"
+        ldarg val
+        box int32
+        call string [mscorlib]System.String::Format(string, object)
+        call void [mscorlib]System.Console::WriteLine(string)
+
+        ldarg.0
+        ldfld class DecisionNode CollatzSequence::IsCompleteNode
+        ldnull
+        ldarg val
+        call instance void DecisionNode::fire_ValueChanged(object, int32)
+
+        ret
+    }
 }
 
 .method public static void Main()
