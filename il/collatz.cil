@@ -240,7 +240,7 @@
     .field class UnOpNode MultiplyByThreeNode
     .field class UnOpNode AddOneNode
 
-    .field class DecisionNode IsEvenNode
+    .field public class DecisionNode IsEvenNode
     .field class DecisionNode IsCompleteNode
 
     .method private instance void initNodes()
@@ -383,7 +383,7 @@
 
 .method public static void Main()
 {
-    .entrypoint
+    // .entrypoint
     .locals (class CollatzSequence s)
 
     ldstr "collatz2"
@@ -393,7 +393,7 @@
     stloc s
 
     ldloc s
-    ldc.i4 135
+    ldc.i4 317
     call instance void class CollatzSequence::set_SequenceVal(int32)
 
     ret
